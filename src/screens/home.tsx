@@ -1,95 +1,66 @@
 import React, { FC, useEffect, useState } from 'react';
-import { View, StyleSheet, Alert, Dimensions, FlatList, Text } from 'react-native';
-
-import { Button, Input, ApprovedPost } from '../components';
+import { View, StyleSheet, Dimensions, Text } from 'react-native';
 import firebase from 'firebase';
+import { VictoryLine, VictoryChart, VictoryTheme, VictoryAxis } from 'victory-native';
+
+import { Button } from '../components';
+import { ChartObject } from '../types';
+import { getDataForYear } from '../utils';
+import { DARK_BLUE } from '../constants/colors';
 
 interface Props {
     navigation: {
-        navigate: (route: string) => void;
+        navigate: (route: string, opt?: any) => void;
     };
 }
 
 const { width } = Dimensions.get('screen');
 
 const Home: FC<Props> = ({ navigation }) => {
-    const [text, setText] = useState<string | null>(null);
     const [user, setUser] = useState<any>(null);
-    const [posts, setPosts] = useState<any[]>([]);
+    const [stats, setStats] = useState<ChartObject[]>([]);
 
     useEffect(() => {
-        fetchCurrentUser();
-        fetchApprovedPosts();
+        fetchUsersStatsForThisYear();
     }, []);
 
-    const fetchCurrentUser = async () => {
+    const currentYear = new Date().getFullYear();
+
+    const fetchUsersStatsForThisYear = async () => {
         const uid = firebase.auth().currentUser?.uid;
         const currentUser = await firebase.firestore().collection('users').doc(uid).get();
-        setUser({ id: currentUser.id, ...currentUser.data() });
-    };
+        setUser(currentUser.data());
 
-    const fetchApprovedPosts = async () => {
-        firebase
-            .firestore()
-            .collection('posts')
-            .where('approved', '==', true)
-            .onSnapshot((querySnaphot) => {
-                const documents = querySnaphot.docs;
-                setPosts(documents);
-            });
-        // const posts = await firebase.firestore().collection('posts').where('approved', '==', true).get();
-        // setPosts([...posts.docs]);
+        const statsForThisYear = getDataForYear({ data: currentUser.data()?.stats, year: currentYear.toString() });
+        setStats(statsForThisYear);
     };
 
     const logout = async () => {
         await firebase.auth().signOut();
     };
 
-    const post = async () => {
-        if (text) {
-            try {
-                const data = { text, timeStamp: new Date(), approved: false };
-                await firebase.firestore().collection('posts').add(data);
-            } catch (error) {
-                console.log(error);
-            }
-        } else {
-            Alert.alert('Missing fields');
-        }
-    };
-
     return (
         <View style={styles.container}>
-            <View style={{ flex: 0.5 }}>
-                {posts.length > 0 ? (
-                    <FlatList
-                        data={posts}
-                        renderItem={({ item }) => (
-                            <ApprovedPost
-                                message={item.data().text}
-                                approved={item.data().approved}
-                                timestamp={item.data().timeStamp.toDate().toDateString()}
-                            />
-                        )}
-                    />
-                ) : (
-                    <View>
-                        <Text>Nothing to see here</Text>
-                    </View>
-                )}
-            </View>
-
-            <Input placeholder="Write something here" onChangeText={(text) => setText(text)} />
-            <Button title="Post" onPress={post} />
-
+            <Text style={styles.helloText}>
+                Hello, {user?.name}! Here's how your {currentYear} has been going:
+            </Text>
+            <VictoryChart width={width - 10} theme={VictoryTheme.material}>
+                <VictoryLine
+                    data={stats}
+                    x="monthYear"
+                    y="value"
+                    style={{
+                        data: { stroke: DARK_BLUE },
+                    }}
+                />
+                <VictoryAxis fixLabelOverlap={true} style={{ grid: { stroke: 'none' } }} />
+                <VictoryAxis dependentAxis style={{ grid: { stroke: 'none' } }} />
+            </VictoryChart>
             <View style={styles.buttonsContainer}>
-                {user && user.isAdmin && (
-                    <View>
-                        <Button title="Dashboard" onPress={() => navigation.navigate('dashboard')} />
-                    </View>
-                )}
-                <Button title="Log out" onPress={logout} />
+                <Button title="Book charts" onPress={() => navigation.navigate('charts')} />
+                <Button title="Add new stats" onPress={() => navigation.navigate('new-stat')} />
             </View>
+            <Button title="Log out" onPress={logout} />
         </View>
     );
 };
@@ -105,7 +76,10 @@ const styles = StyleSheet.create({
     buttonsContainer: {
         marginTop: 50,
         flexDirection: 'row',
-        width: width / 2,
-        justifyContent: 'space-between',
+    },
+    helloText: {
+        fontSize: 24,
+        marginHorizontal: 30,
+        textAlign: 'center',
     },
 });

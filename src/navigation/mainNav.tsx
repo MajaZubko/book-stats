@@ -9,7 +9,7 @@ const MainNav: FC = () => {
 
     const bootstrap = () => {
         firebase.auth().onAuthStateChanged((changedUser) => {
-            if (changedUser) setUser(changedUser);
+            setUser(changedUser);
         });
     };
 
