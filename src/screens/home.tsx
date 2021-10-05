@@ -4,7 +4,7 @@ import firebase from 'firebase';
 import { VictoryLine, VictoryChart, VictoryTheme, VictoryAxis } from 'victory-native';
 
 import { Button } from '../components';
-import { ChartObject } from '../types';
+import { ChartObject, DataObject } from '../types';
 import { getDataForYear } from '../utils';
 import { DARK_BLUE } from '../constants/colors';
 
@@ -28,11 +28,24 @@ const Home: FC<Props> = ({ navigation }) => {
 
     const fetchUsersStatsForThisYear = async () => {
         const uid = firebase.auth().currentUser?.uid;
-        const currentUser = await firebase.firestore().collection('users').doc(uid).get();
-        setUser(currentUser.data());
+        await firebase
+            .firestore()
+            .collection('users')
+            .doc(uid)
+            .onSnapshot((querySnapshot) => {
+                const usersData = querySnapshot.data();
+                setUser(usersData);
+            });
 
-        const statsForThisYear = getDataForYear({ data: currentUser.data()?.stats, year: currentYear.toString() });
-        setStats(statsForThisYear);
+        await firebase
+            .firestore()
+            .collection('stats')
+            .doc(uid)
+            .onSnapshot((querySnapshot) => {
+                const stats = querySnapshot.data();
+                const statsForThisYear = getDataForYear({ data: stats as DataObject, year: currentYear.toString() });
+                setStats(statsForThisYear);
+            });
     };
 
     const logout = async () => {
@@ -41,21 +54,29 @@ const Home: FC<Props> = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.helloText}>
-                Hello, {user?.name}! Here's how your {currentYear} has been going:
-            </Text>
-            <VictoryChart width={width - 10} theme={VictoryTheme.material}>
-                <VictoryLine
-                    data={stats}
-                    x="monthYear"
-                    y="value"
-                    style={{
-                        data: { stroke: DARK_BLUE },
-                    }}
-                />
-                <VictoryAxis fixLabelOverlap={true} style={{ grid: { stroke: 'none' } }} />
-                <VictoryAxis dependentAxis style={{ grid: { stroke: 'none' } }} />
-            </VictoryChart>
+            {!!user?.name && (
+                <Text style={styles.helloText}>
+                    Hello, {user?.name}! Here's how your {currentYear} has been going:
+                </Text>
+            )}
+
+            {stats.length > 0 && (
+                <>
+                    <VictoryChart width={width - 10} theme={VictoryTheme.material}>
+                        <VictoryLine
+                            data={stats}
+                            x="monthYear"
+                            y="value"
+                            style={{
+                                data: { stroke: DARK_BLUE },
+                            }}
+                        />
+                        <VictoryAxis fixLabelOverlap={true} style={{ grid: { stroke: 'none' } }} />
+                        <VictoryAxis dependentAxis style={{ grid: { stroke: 'none' } }} />
+                    </VictoryChart>
+                </>
+            )}
+
             <View style={styles.buttonsContainer}>
                 <Button title="Book charts" onPress={() => navigation.navigate('charts')} />
                 <Button title="Add new stats" onPress={() => navigation.navigate('new-stat')} />
