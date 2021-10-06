@@ -8,6 +8,9 @@ interface Props {
 }
 
 export default ({ data, year }: Props): ChartObject[] => {
+    if (!data) {
+        return [];
+    }
     const keysFromDataForThisYear = Object.keys(data).filter((key) => key.includes(year));
     const lackingMonthsPrefixes = monthsPrefixes.filter((prefix) => !some(keysFromDataForThisYear, (key) => key.includes(prefix)));
     const lackingMonthsKeys = lackingMonthsPrefixes.map((prefix) => `${prefix}${year}`);

@@ -64,6 +64,7 @@ const Home: FC<Props> = ({ navigation }) => {
                 <>
                     <VictoryChart width={width - 10} theme={VictoryTheme.material}>
                         <VictoryLine
+                            animate
                             data={stats}
                             x="monthYear"
                             y="value"

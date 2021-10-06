@@ -1,10 +1,12 @@
 import React, { FC, useState } from 'react';
-import { StyleSheet, SafeAreaView, View, Alert, Text, Platform } from 'react-native';
-import DatePicker from '@dietime/react-native-date-picker';
+import { StyleSheet, SafeAreaView, View, Alert } from 'react-native';
+import 'react-native-gesture-handler';
+import { Picker } from '@react-native-picker/picker';
 import firebase from 'firebase';
-import { format } from 'date-fns';
 
 import { Button, Input } from '../components';
+import { monthsPrefixes } from '../constants/monthPrefixes';
+import { getAvailableMonthsPrefixesForCurrentYear, getYearsBetween } from '../utils';
 
 interface Props {
     navigation: {
@@ -14,13 +16,36 @@ interface Props {
 }
 const NewStat: FC<Props> = ({ navigation }) => {
     const [numberOfBooksRead, setNumberOfBooksRead] = useState<number | null>(null);
-    const [date, setDate] = useState<Date>(new Date());
+    const [date, setDate] = useState<string>('');
+
+    const getDateOptions = () => {
+        const currentYear = new Date().getFullYear();
+        const startYear = 2010;
+
+        const years = getYearsBetween(startYear, currentYear);
+        const availableMonthsPrefixesForCurrentYear = getAvailableMonthsPrefixesForCurrentYear();
+
+        let allOptions: string[] = [];
+
+        years.forEach((year) => {
+            if (year !== currentYear) {
+                monthsPrefixes.forEach((month) => {
+                    allOptions = [...allOptions, `${month}${year}`];
+                });
+            } else {
+                availableMonthsPrefixesForCurrentYear.forEach((month) => {
+                    allOptions = [...allOptions, `${month}${currentYear}`];
+                });
+            }
+        });
+
+        return allOptions.reverse();
+    };
 
     const addStat = async () => {
         if (numberOfBooksRead && date) {
             try {
-                const formattedDate = format(date, 'MM-yyyy');
-                const newStat = { [formattedDate]: numberOfBooksRead };
+                const newStat = { [date]: numberOfBooksRead };
                 const uid = firebase.auth().currentUser?.uid;
                 await firebase.firestore().collection('stats').doc(uid).set(newStat, { merge: true });
 
@@ -39,18 +64,12 @@ const NewStat: FC<Props> = ({ navigation }) => {
                 <Button onPress={() => navigation.goBack()} title="Back" />
             </View>
 
-            <Text>Select month and year</Text>
-            <DatePicker
-                value={null}
-                onChange={(value) => setDate(value)}
-                format="mm-yyyy"
-                startYear={2019}
-                fontSize={16}
-                width={300}
-                height={80}
-                fadeColor="#f2f2f2"
-            />
-
+            <Picker selectedValue={date} onValueChange={(value) => setDate(value)} mode="dropdown" style={styles.picker}>
+                <Picker.Item label="Select month and year" value="" />
+                {getDateOptions().map((option) => (
+                    <Picker.Item label={option} value={option} key={option} />
+                ))}
+            </Picker>
             <Input placeholder="Number of books read (e.g. 5)" onChangeText={(text: string) => setNumberOfBooksRead(+text)} />
             <Button title="Add stat" onPress={addStat} />
         </SafeAreaView>
@@ -67,6 +86,11 @@ const styles = StyleSheet.create({
     },
     backButton: {
         alignSelf: 'flex-start',
-        marginHorizontal: 20,
+        position: 'absolute',
+        top: 20,
+        left: 0,
+    },
+    picker: {
+        width: 300,
     },
 });
