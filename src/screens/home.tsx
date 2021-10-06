@@ -54,13 +54,13 @@ const Home: FC<Props> = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            {!!user?.name && (
+            {!!user?.name && stats.length > 0 && (
                 <Text style={styles.helloText}>
                     Hello, {user?.name}! Here's how your {currentYear} has been going:
                 </Text>
             )}
 
-            {stats.length > 0 && (
+            {stats.length > 0 ? (
                 <>
                     <VictoryChart width={width - 10} theme={VictoryTheme.material}>
                         <VictoryLine
@@ -76,6 +76,8 @@ const Home: FC<Props> = ({ navigation }) => {
                         <VictoryAxis dependentAxis style={{ grid: { stroke: 'none' } }} />
                     </VictoryChart>
                 </>
+            ) : (
+                <Text style={styles.helloText}>Hello, {user?.name}! Add some book stats to see how your reading is going</Text>
             )}
 
             <View style={styles.buttonsContainer}>
