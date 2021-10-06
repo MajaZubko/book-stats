@@ -3,6 +3,7 @@ import { Text, View, StyleSheet, Alert } from 'react-native';
 import firebase from 'firebase';
 import { Input, Button } from '../components';
 import { TouchableOpacity } from 'react-native-gesture-handler';
+import { DARK_BLUE } from '../constants/colors';
 
 interface Props {
     navigation: {
@@ -40,7 +41,7 @@ const SignUp: FC<Props> = ({ navigation }) => {
             <View style={styles.loginText}>
                 <Text>Already have an account? </Text>
                 <TouchableOpacity onPress={() => navigation.navigate('login')}>
-                    <Text style={{ color: 'dodgerblue' }}>Login Here</Text>
+                    <Text style={{ color: DARK_BLUE }}>Login Here</Text>
                 </TouchableOpacity>
             </View>
         </View>

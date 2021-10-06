@@ -1,6 +1,7 @@
 import SignUp from './signup';
 import Login from './login';
 import Home from './home';
-import Dashboard from './dashboard';
+import NewStat from './newStat';
+import Charts from './charts';
 
-export { SignUp, Login, Home, Dashboard };
+export { SignUp, Login, Home, NewStat, Charts };
