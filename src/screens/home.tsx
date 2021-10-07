@@ -17,6 +17,7 @@ interface Props {
 const { width } = Dimensions.get('screen');
 
 const Home: FC<Props> = ({ navigation }) => {
+    const [isLoading, setIsLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
     const [stats, setStats] = useState<ChartObject[]>([]);
 
@@ -27,6 +28,7 @@ const Home: FC<Props> = ({ navigation }) => {
     const currentYear = new Date().getFullYear();
 
     const fetchUsersStatsForThisYear = async () => {
+        setIsLoading(true);
         const uid = firebase.auth().currentUser?.uid;
         await firebase
             .firestore()
@@ -46,11 +48,21 @@ const Home: FC<Props> = ({ navigation }) => {
                 const statsForThisYear = getDataForYear({ data: stats as DataObject, year: currentYear.toString() });
                 setStats(statsForThisYear);
             });
+
+        setIsLoading(false);
     };
 
     const logout = async () => {
         await firebase.auth().signOut();
     };
+
+    if (isLoading) {
+        return (
+            <View style={styles.container}>
+                <Text>Loading...</Text>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>

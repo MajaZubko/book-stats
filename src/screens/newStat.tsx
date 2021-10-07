@@ -1,12 +1,11 @@
 import React, { FC, useState } from 'react';
-import { StyleSheet, SafeAreaView, View, Alert } from 'react-native';
+import { StyleSheet, SafeAreaView, View, Alert, Text } from 'react-native';
 import 'react-native-gesture-handler';
 import { Picker } from '@react-native-picker/picker';
 import firebase from 'firebase';
 
 import { Button, Input } from '../components';
-import { monthsPrefixes } from '../constants/monthPrefixes';
-import { getAvailableMonthsPrefixesForCurrentYear, getYearsBetween } from '../utils';
+import { getNumbersBetween } from '../utils';
 
 interface Props {
     navigation: {
@@ -15,37 +14,19 @@ interface Props {
     };
 }
 const NewStat: FC<Props> = ({ navigation }) => {
+    const currentYear = new Date().getFullYear();
+    const startYear = 2010;
+    const currentMonth = new Date().getMonth() + 1;
+
     const [numberOfBooksRead, setNumberOfBooksRead] = useState<number | null>(null);
-    const [date, setDate] = useState<string>('');
-
-    const getDateOptions = () => {
-        const currentYear = new Date().getFullYear();
-        const startYear = 2010;
-
-        const years = getYearsBetween(startYear, currentYear);
-        const availableMonthsPrefixesForCurrentYear = getAvailableMonthsPrefixesForCurrentYear();
-
-        let allOptions: string[] = [];
-
-        years.forEach((year) => {
-            if (year !== currentYear) {
-                monthsPrefixes.forEach((month) => {
-                    allOptions = [...allOptions, `${month}${year}`];
-                });
-            } else {
-                availableMonthsPrefixesForCurrentYear.forEach((month) => {
-                    allOptions = [...allOptions, `${month}${currentYear}`];
-                });
-            }
-        });
-
-        return allOptions.reverse();
-    };
+    const [month, setMonth] = useState<number>(currentMonth);
+    const [year, setYear] = useState<number>(currentYear);
 
     const addStat = async () => {
-        if (numberOfBooksRead && date) {
+        if (numberOfBooksRead && month && year && Number.isInteger(numberOfBooksRead)) {
             try {
-                const newStat = { [date]: numberOfBooksRead };
+                const fullMonth = month.toString().length === 1 ? `0${month}` : month;
+                const newStat = { [`${fullMonth}-${year}`]: numberOfBooksRead };
                 const uid = firebase.auth().currentUser?.uid;
                 await firebase.firestore().collection('stats').doc(uid).set(newStat, { merge: true });
 
@@ -53,6 +34,8 @@ const NewStat: FC<Props> = ({ navigation }) => {
             } catch (error) {
                 console.log(error);
             }
+        } else if (!Number.isInteger(numberOfBooksRead)) {
+            Alert.alert('Number of books has to be an integer');
         } else {
             Alert.alert('Missing fields');
         }
@@ -64,12 +47,21 @@ const NewStat: FC<Props> = ({ navigation }) => {
                 <Button onPress={() => navigation.goBack()} title="Back" />
             </View>
 
-            <Picker selectedValue={date} onValueChange={(value) => setDate(value)} mode="dropdown" style={styles.picker}>
-                <Picker.Item label="Select month and year" value="" />
-                {getDateOptions().map((option) => (
-                    <Picker.Item label={option} value={option} key={option} />
-                ))}
-            </Picker>
+            <Text>Select month and year</Text>
+            <View style={styles.pickersContainer}>
+                <Picker selectedValue={month} onValueChange={(value) => setMonth(+value)} mode="dropdown" style={styles.picker}>
+                    {getNumbersBetween(1, year === currentYear ? currentMonth : 12).map((option) => (
+                        <Picker.Item label={option.toString()} value={option} key={option} />
+                    ))}
+                </Picker>
+
+                <Picker selectedValue={year} onValueChange={(value) => setYear(+value)} mode="dropdown" style={styles.picker}>
+                    {getNumbersBetween(startYear, currentYear).map((option) => (
+                        <Picker.Item label={option.toString()} value={option} key={option} />
+                    ))}
+                </Picker>
+            </View>
+
             <Input placeholder="Number of books read (e.g. 5)" onChangeText={(text: string) => setNumberOfBooksRead(+text)} />
             <Button title="Add stat" onPress={addStat} />
         </SafeAreaView>
@@ -87,10 +79,13 @@ const styles = StyleSheet.create({
     backButton: {
         alignSelf: 'flex-start',
         position: 'absolute',
-        top: 20,
+        top: 40,
         left: 0,
     },
     picker: {
-        width: 300,
+        width: 150,
+    },
+    pickersContainer: {
+        flexDirection: 'row',
     },
 });

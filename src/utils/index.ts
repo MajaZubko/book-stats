@@ -1,6 +1,4 @@
 import getDataForYear from './getDataForYear';
-import formatDataForChart from './formatDataForChart';
-import getYearsBetween from './getYearsBetween';
-import getAvailableMonthsPrefixesForCurrentYear from './getAvailableMonthsPrefixesForCurrentYear';
+import getNumbersBetween from './getNumbersBetween';
 
-export { getDataForYear, formatDataForChart, getYearsBetween, getAvailableMonthsPrefixesForCurrentYear };
+export { getDataForYear, getNumbersBetween };
