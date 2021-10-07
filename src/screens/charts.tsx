@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     backButton: {
         alignSelf: 'flex-start',
         position: 'absolute',
-        top: 20,
+        top: 40,
         left: 0,
     },
     picker: {
