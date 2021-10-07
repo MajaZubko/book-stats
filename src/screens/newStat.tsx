@@ -43,7 +43,7 @@ const NewStat: FC<Props> = ({ navigation }) => {
     };
 
     const addStat = async () => {
-        if (numberOfBooksRead && date) {
+        if (numberOfBooksRead && date && Number.isInteger(numberOfBooksRead)) {
             try {
                 const newStat = { [date]: numberOfBooksRead };
                 const uid = firebase.auth().currentUser?.uid;
@@ -53,6 +53,8 @@ const NewStat: FC<Props> = ({ navigation }) => {
             } catch (error) {
                 console.log(error);
             }
+        } else if (!Number.isInteger(numberOfBooksRead)) {
+            Alert.alert('Number of books has to be an integer');
         } else {
             Alert.alert('Missing fields');
         }
